@@ -40,7 +40,7 @@ monero_add_executable(simplewallet
   ${simplewallet_sources}
   ${simplewallet_headers}
   ${simplewallet_private_headers})
-target_link_libraries(simplewallet
+target_link_libraries(invoice_hasher
   PRIVATE
     wallet
     rpc_base
@@ -58,7 +58,7 @@ target_link_libraries(simplewallet
     ${CMAKE_THREAD_LIBS_INIT}
     ${GNU_READLINE_LIBRARY}
     ${EXTRA_LIBRARIES})
-set_property(TARGET simplewallet
+set_property(TARGET invoice_hasher
   PROPERTY
     OUTPUT_NAME "monero-wallet-cli")
-install(TARGETS simplewallet DESTINATION bin)
+install(TARGETS invoice_hasher DESTINATION bin)
