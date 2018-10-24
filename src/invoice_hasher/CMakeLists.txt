@@ -36,7 +36,7 @@ set(simplewallet_private_headers
 
 monero_private_headers(simplewallet
   ${simplewallet_private_headers})
-monero_add_executable(simplewallet
+monero_add_executable(invoice_hasher
   ${simplewallet_sources}
   ${simplewallet_headers}
   ${simplewallet_private_headers})
