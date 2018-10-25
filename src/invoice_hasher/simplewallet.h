@@ -76,6 +76,7 @@ namespace cryptonote
     bool run();
     void stop();
     void interrupt();
+    void hash_invoice(std::string const& path_to_invoice);
 
     //wallet *create_wallet();
     bool process_command(const std::vector<std::string> &args);

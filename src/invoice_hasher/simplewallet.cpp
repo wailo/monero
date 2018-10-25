@@ -38,6 +38,7 @@
 #include <sstream>
 #include <fstream>
 #include <ctype.h>
+#include <regex>
 #include <boost/lexical_cast.hpp>
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string.hpp>
@@ -7572,6 +7573,63 @@ void simple_wallet::interrupt()
   {
     stop();
   }
+}
+//----------------------------------------------------------------------------------------------------
+void simple_wallet::hash_invoice(std::string const& path_to_invoice) {
+  if (!path_to_invoice.empty()) {
+    // error handling?
+    return;
+  }
+
+  std::ifstream file(path_to_invoice, std::ios::binary);
+
+  if (!file) {
+    std::cout << "Unable to open invoice file" << std::endl;
+    return;
+  }
+
+  // copies all data into buffer
+  std::vector<char> invoice_data((std::istreambuf_iterator<char>(file)),
+                           (std::istreambuf_iterator<char>()));
+
+  // Regex to match invoice number. Must be alphanumeric, and of size 6
+  std::regex invoice_hash_regex(R"([0-9]{6})", std::regex::ECMAScript);
+  std::smatch m;
+  std::string invoice_nubmer;
+
+  std::cout << "Enter 6 decimal hash value. Q to quit: ";
+  std::cin >> invoice_nubmer;
+
+  if (invoice_nubmer == "q" || invoice_nubmer == "Q") {
+    std::cout << "Quitting as per user request" << std::endl;
+    return;
+  }
+
+  if (!regex_match(invoice_nubmer, m, invoice_hash_regex)) {
+    std::cout << "Invalid input" << std::endl;
+    return;
+  }
+  else {
+
+    // Double check that string size is 6
+    if (invoice_nubmer.size() != 6) {
+      throw std::runtime_error("invalid invoice size");
+    }
+    
+    crypto::secret_key key;
+    crypto::cn_slow_hash(invoice_data.data(), invoice_data.size(), (crypto::hash&)key);
+
+    // Copy invoice number into the last 6 bytes of the key, converting from ascii to int
+    for (int i = 0; i<6; ++i) {
+      key.data[26+i] = invoice_number.at(i) - '0';
+    }
+
+    sc_reduce32((unsigned char*)key.data);
+    std::string multisig_keys = m_wallet->decrypt(multisig_keys, key, true);
+  }
+
+  return;
+  
 }
 //----------------------------------------------------------------------------------------------------
 void simple_wallet::commit_or_save(std::vector<tools::wallet2::pending_tx>& ptx_vector, bool do_not_relay)
