@@ -136,11 +136,6 @@ if(NOT IOS)
   add_subdirectory(blockchain_utilities)
 endif()
 
-if(NOT IOS)
-  add_subdirectory(invoice_hasher)
-endif()
-
-
 if(CMAKE_BUILD_TYPE STREQUAL Debug)
   add_subdirectory(debug_utilities)
 endif()
