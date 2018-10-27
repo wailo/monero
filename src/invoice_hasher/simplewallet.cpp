@@ -7595,24 +7595,24 @@ void simple_wallet::hash_invoice(std::string const& path_to_invoice) {
   // Regex to match invoice number. Must be alphanumeric, and of size 6
   std::regex invoice_hash_regex(R"([0-9]{6})", std::regex::ECMAScript);
   std::smatch m;
-  std::string invoice_nubmer;
+  std::string invoice_number;
 
   std::cout << "Enter 6 decimal hash value. Q to quit: ";
-  std::cin >> invoice_nubmer;
+  std::cin >> invoice_number;
 
-  if (invoice_nubmer == "q" || invoice_nubmer == "Q") {
+  if (invoice_number == "q" || invoice_number == "Q") {
     std::cout << "Quitting as per user request" << std::endl;
     return;
   }
 
-  if (!regex_match(invoice_nubmer, m, invoice_hash_regex)) {
+  if (!regex_match(invoice_number, m, invoice_hash_regex)) {
     std::cout << "Invalid input" << std::endl;
     return;
   }
   else {
 
     // Double check that string size is 6
-    if (invoice_nubmer.size() != 6) {
+    if (invoice_number.size() != 6) {
       throw std::runtime_error("invalid invoice size");
     }
     
