@@ -29,29 +29,34 @@
 #include "gtest/gtest.h"
 
 #include "wallet/wallet2.h"
-// #include "common/dns_utils.h"
-// #include "simplewallet/simplewallet.h"
+#include "crypto/hash-invoice.h"
 #include <string>
+#include <vector>
+
+using namespace crypto;
 
 TEST(VATnumberValidation, Success)
 {
-  cryptonote::simple_wallet wallet;
-  EXPECT_TRUE(wallet.hash_invoice("invoice_hasher.cpp", "01232") == boost::none);
-  EXPECT_TRUE(wallet.hash_invoice("invoice_hasher.cpp", "asdfgh") == boost::none);
-  EXPECT_TRUE(wallet.hash_invoice("invoice_hasher.cpp", "123456") != boost::none);
+
+  std::vector<char> file_data = { '1', '2', '3' };
+  EXPECT_TRUE(hash_invoice(file_data, "01232") != boost::none);
+  EXPECT_TRUE(hash_invoice(file_data, "asdfgh") == boost::none);
+  EXPECT_TRUE(hash_invoice(file_data, "123456") != boost::none);
 
 }
 
 
 TEST(HashValidation, Success)
 {
-  // cryptonote::simple_wallet wallet;
-  // auto hash = wallet.hash_invoice("invoice_hasher.cpp", "012345");
-  // std::sstring hash_str;
-  // hash_str << hash.get();
-  
-  // EXPECT_STREQ
-  EXPECT_EQ(wallet.hash_invoice("invoice_hasher.cpp", "01232")  == boost::none, true);
-  EXPECT_EQ(wallet.hash_invoice("invoice_hasher.cpp", "asdfgh") == boost::none, true);
-  EXPECT_EQ(wallet.hash_invoice("invoice_hasher.cpp", "123456") == boost::none, false);
+
+ std::string data_str = "6465206f6d6e69627573206475626974616e64756d";
+ std::vector<char> data_arr(data_str.begin(), data_str.end());
+ boost::optional<crypto::hash> result = hash_invoice(data_arr, "000000");
+ EXPECT_EQ(std::string(result.get().data), "2f8e3df40bd11f9ac90c743ca8e32bb391da4fb98612aa3b6cdc000000000000");
+
+
+ data_str = "6162756e64616e732063617574656c61206e6f6e206e6f636574";
+ data_arr = std::vector<char>(data_str.begin(), data_str.end());
+ result = hash_invoice(data_arr, "123456");
+ EXPECT_EQ(std::string(result.get().data), "722fa8ccd594d40e4a41f3822734304c8d5eff7e1b528408e222010203040506");
 }
