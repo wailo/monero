@@ -66,7 +66,8 @@ set(crypto_private_headers
   oaes_lib.h
   random.h
   skein.h
-  skein_port.h)
+  skein_port.h
+  hash-invoice.h)
 
 monero_private_headers(cncrypto
   ${crypto_private_headers})
