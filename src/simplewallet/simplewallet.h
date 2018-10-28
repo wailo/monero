@@ -76,7 +76,6 @@ namespace cryptonote
     bool run();
     void stop();
     void interrupt();
-    boost::optional<crypto::hash> hash_invoice(const std::string& path_to_invoice, const std::string& invoice_number);
 
     //wallet *create_wallet();
     bool process_command(const std::vector<std::string> &args);

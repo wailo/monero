@@ -36,9 +36,9 @@
 #include <thread>
 #include <iostream>
 #include <sstream>
-#include <fstream>
 #include <ctype.h>
 #include <regex>
+#include <fstream>
 #include <boost/lexical_cast.hpp>
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string.hpp>
@@ -57,6 +57,7 @@
 #include "storages/http_abstract_invoke.h"
 #include "rpc/core_rpc_server_commands_defs.h"
 #include "crypto/crypto.h"  // for crypto::secret_key definition
+#include "crypto/hash-invoice.h"  // for hash_invoice
 #include "mnemonics/electrum-words.h"
 #include "rapidjson/document.h"
 #include "common/json_util.h"
@@ -733,9 +734,29 @@ bool simple_wallet::payment_id(const std::vector<std::string> &args/* = std::vec
   {
     const auto argc = args.size();
 
-    std::string invoice_path = argc > 1 ? args.at(1) : input_line("Enter absolute path to an invoice file: ");
     std::string vat_number = argc > 2 ? args.at(2) : input_line("Enter 6 digits VAT number: ");
-    auto payment_id = hash_invoice(invoice_path, vat_number);
+    // Regex to match invoice number. Must be alphanumeric, and of size 6
+    std::regex invoice_hash_regex(R"([0-9]{6})", std::regex::ECMAScript);
+    std::smatch m;
+
+    if (!regex_match(vat_number, m, invoice_hash_regex)) {
+      tools::fail_msg_writer()  << tr("Invalid vat number: ") << vat_number;
+      return false;
+    }
+
+    std::string invoice_path = argc > 1 ? args.at(1) : input_line("Enter absolute path to an invoice file: ");
+    std::ifstream file(invoice_path, std::ios::binary);
+
+    if (!file) {
+      tools::fail_msg_writer() << "Unable to open invoice file";
+      return false;
+    }
+
+    // copies all data into buffer
+    std::vector<char> invoice_data((std::istreambuf_iterator<char>(file)),
+                                           (std::istreambuf_iterator<char>()));
+
+    auto payment_id = crypto::hash_invoice(invoice_data, vat_number);
     if (payment_id) {
       success_msg_writer() << tr("Invoice payment ID: ") << (*payment_id);
     }
@@ -4572,6 +4593,9 @@ bool simple_wallet::transfer_main(int transfer_type, const std::vector<std::stri
       fail_msg_writer() << tr("payment id has invalid format, expected 16 or 64 character hex string: ") << payment_id_str;
       return true;
     }
+
+    success_msg_writer() << tr("+++++ payment_id successfully decoded");
+
     payment_id_seen = true;
   }
 
@@ -7583,47 +7607,6 @@ void simple_wallet::interrupt()
   {
     stop();
   }
-}
-//----------------------------------------------------------------------------------------------------
-boost::optional<crypto::hash> simple_wallet::hash_invoice(const std::string& path_to_invoice, const std::string& invoice_number) {
-
-
-  // Regex to match invoice number. Must be alphanumeric, and of size 6
-  std::regex invoice_hash_regex(R"([0-9]{6})", std::regex::ECMAScript);
-  std::smatch m;
-
-  if (!regex_match(invoice_number, m, invoice_hash_regex)) {
-    fail_msg_writer()  << tr("Invalid invoice number: ") << invoice_number;
-    return boost::none;
-  }
-
-  std::ifstream file(path_to_invoice, std::ios::binary);
-
-  if (!file) {
-    fail_msg_writer() << tr("Unable to open invoice file");
-    return boost::none;
-  }
-
-  // copies all data into buffer
-  std::vector<char> invoice_data((std::istreambuf_iterator<char>(file)),
-                           (std::istreambuf_iterator<char>()));
-
-  crypto::hash payment_id;
-  crypto::secret_key payment_id_ec;
-
-  // Use this hash functions.
-  crypto::cn_slow_hash(invoice_data.data(), invoice_data.size(), payment_id);
-
-  // Copy invoice number into the last 6 bytes of the payment_id, converting from ascii to int
-  for (int i = 0; i<6; ++i) {
-    payment_id.data[26+i] = invoice_number.at(i) - '0';
-  }
-
-  sc_reduce32((unsigned char*)payment_id.data);
-  // std::string multisig_keys = m_wallet->decrypt(multisig_keys, payment_id, true);
-  // success_msg_writer() << multisig_keys;
-
-  return payment_id;
 }
 //----------------------------------------------------------------------------------------------------
 void simple_wallet::commit_or_save(std::vector<tools::wallet2::pending_tx>& ptx_vector, bool do_not_relay)
